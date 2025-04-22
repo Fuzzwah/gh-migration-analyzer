@@ -152,7 +152,6 @@ export const fetchRepoMetrics = async (repositories) => {
       isArchived: repo.node.isArchived,
       numOfPullRequests: repo.node.pullRequests.totalCount,
       numOfIssues: repo.node.issues.totalCount,
-      numOfProjects: repo.node.projects.totalCount,
       numOfDiscussions: repo.node.discussions.totalCount,
       numOfPackages: repo.node.packages.totalCount,
       numOfReleases: repo.node.releases.totalCount,
@@ -163,8 +162,8 @@ export const fetchRepoMetrics = async (repositories) => {
     if (repo.node.pullRequests.totalCount > orgMetrics.mostPr) {
       orgMetrics.mostPr = repo.node.pullRequests.totalCount;
     }
-    if (repo.node.projects.totalCount > orgMetrics.mostIssues) {
-      orgMetrics.mostIssues = repo.node.projects.totalCount;
+    if (repo.node.issues.totalCount > orgMetrics.mostIssues) {
+      orgMetrics.mostIssues = repo.node.issues.totalCount;
     }
     count = count + 1;
     metrics.push(repoInfo);
@@ -173,11 +172,8 @@ export const fetchRepoMetrics = async (repositories) => {
     );
   }
 
-  // paginating calls
-  // if there are more than 50 repos
-  // fetch the next 50 repos
+  // Paginate calls if necessary
   if (repositories.length === 50) {
-    // get cursor to last repository
     spinner.start(
       `(${count}/${fetched.data.organization.repositories.totalCount}) Fetching next 50 repos`
     );
@@ -261,9 +257,6 @@ export function fetchOrgInfoOptions(org, token, allowUntrustedSslCertificates) {
     body: JSON.stringify({
       query: `{
         organization(login: "${org}") {
-          projects(first: 1) {
-            totalCount
-          }
           membersWithRole(first: 1) {
             totalCount
           }
@@ -311,9 +304,6 @@ export function fetchRepoInOrgInfoOptions(
             edges {
               cursor
               node {
-                projects(first:1){
-                  totalCount
-                }  
                 hasWikiEnabled
                 issues(first: 1) {
                   totalCount
@@ -364,7 +354,6 @@ export const storeOrgMetrics = async (organization, server) => {
     fs.mkdirSync(dir);
   }
 
-  // Total number of pull-request and issues
   const totalCount = metrics.reduce(
     (prev, current) => {
       return {
@@ -384,7 +373,6 @@ export const storeOrgMetrics = async (organization, server) => {
   const storeData = [
     {
       numOfRepos: metrics.length,
-      numOfProjects: orgInfo.data.organization.projects.totalCount,
       numOfMembers: orgInfo.data.organization.membersWithRole.totalCount,
       mostPrs: orgMetrics.mostPr,
       averagePrs: Math.round(totalCount.pr / metrics.length),
@@ -395,7 +383,6 @@ export const storeOrgMetrics = async (organization, server) => {
 
   const headers = [
     { id: "numOfMembers", title: "Number of Members" },
-    { id: "numOfProjects", title: "Number of Projects" },
     { id: "numOfRepos", title: "Number of Repositories" },
     { id: "mostPrs", title: "Repo with Most Pull Requests" },
     { id: "averagePrs", title: "Average Pull Requests" },
